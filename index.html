@@ -7,45 +7,153 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/php/php.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/lint/lint.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/lint/javascript-lint.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jshint/2.13.4/jshint.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/lint/lint.min.css">
     <style>
-        body { font-family: Arial, sans-serif; background-color: black; color: white; }
-        .editor-container { width: 80%; margin: auto; background-color: black; }
-        .CodeMirror { border: 1px solid #ccc; height: 300px; background: black; color: white; }
+        body { font-family: Arial, sans-serif; background-color: black; color: white; margin: 0; padding: 0; }
+        .editor-container { width: 80%; margin: 0; padding: 0; background-color: black; text-align: center; }
+        .CodeMirror { border: 1px solid #ccc; height: 300px; background: black; color: white; caret-color: white; padding: 0; line-height: 1.5; width: 100%; text-align: left !important; }
+        .CodeMirror-scroll { padding: 0; margin: 0; width: 100%; overflow-y: hidden; }
+        .CodeMirror-lines { padding: 0; text-align: left !important; }
         .CodeMirror-gutters { background: black; border-right: 1px solid #444; }
         .CodeMirror-linenumber { color: white; }
-        .button-container { margin-top: 10px; text-align: center; }
-        .copy-btn { padding: 8px 16px; font-size: 16px; cursor: pointer; background-color: #007BFF; color: white; border: none; border-radius: 5px; }
-        .copy-btn:hover { background-color: #0056b3; }
+        .button-container { margin-top: 10px; }
+        .copy-btn, .save-btn, .fullscreen-btn, .run-btn { padding: 8px 16px; font-size: 16px; cursor: pointer; background-color: #007BFF; color: white; border: none; border-radius: 5px; }
+        .copy-btn:hover, .save-btn:hover, .fullscreen-btn:hover, .run-btn:hover { background-color: #0056b3; }
+        .file-name-input { background: black; color: white; border: 1px solid #444; padding: 5px; margin-bottom: 10px; }
+        .blinker { display: inline-block; width: 10px; height: 20px; background: white; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        .CodeMirror-cursor { border-left: 2px solid white !important; animation: blink 1s step-end infinite; }
+        .fullscreen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1000; }
+        /* Preview Section */
+        .preview-container { width: 80%; margin-top: 20px; padding: 10px; background: black; border: 1px solid #444; text-align: left; }
+        iframe { width: 100%; height: 300px; border: none; }
+        .terminal { background-color: black; color: white; padding: 10px; font-family: monospace; height: 300px; overflow-y: auto; }
     </style>
 </head>
 <body>
     <div class="editor-container">
-        <h2>PESTOcode</h2>
+        <h2>PESTOcode <span class="blinker"></span></h2>
+        <input type="text" id="file-name" class="file-name-input" placeholder="Enter file name..." oninput="setLanguageMode()">
         <textarea id="code"></textarea>
         <div class="button-container">
             <button class="copy-btn" onclick="copyCode()">Copy All</button>
+            <button class="save-btn" onclick="saveFile()">Save File</button>
+            <button class="fullscreen-btn" onclick="toggleFullscreen()">Fullscreen</button>
+            <button class="run-btn" onclick="runCode()">Run</button>
         </div>
     </div>
+
+    <div class="preview-container" id="preview-container">
+        <!-- Preview or terminal output will go here -->
+    </div>
+
+    <div class="terminal" id="terminal" style="display:none;">
+        <!-- Terminal output for JS will be shown here -->
+    </div>
+
     <script>
         window.JSHINT = JSHINT;
+
         var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-            mode: "javascript",
+            mode: "javascript",  // default mode
             lineNumbers: true,
             gutters: ["CodeMirror-lint-markers", "CodeMirror-linenumbers"],
             lint: true,
             theme: "darcula"
         });
 
+        // Function to set language mode based on file extension
+        function setLanguageMode() {
+            const fileName = document.getElementById("file-name").value;
+            const extension = fileName.split('.').pop().toLowerCase();
+            
+            switch(extension) {
+                case 'js':
+                    editor.setOption("mode", "javascript");
+                    break;
+                case 'html':
+                case 'htm':
+                    editor.setOption("mode", "htmlmixed");
+                    break;
+                case 'css':
+                    editor.setOption("mode", "css");
+                    break;
+                case 'php':
+                    editor.setOption("mode", "php");
+                    break;
+                case 'xml':
+                    editor.setOption("mode", "xml");
+                    break;
+                default:
+                    editor.setOption("mode", "javascript");  // Default to JavaScript
+            }
+        }
+
+        // Function to copy the code to clipboard
         function copyCode() {
             navigator.clipboard.writeText(editor.getValue()).then(() => {
                 alert("Code copied to clipboard!");
             }).catch(err => {
                 console.error("Error copying text: ", err);
             });
+        }
+
+        // Function to save the file
+        function saveFile() {
+            const fileName = document.getElementById("file-name").value.trim() || "untitled.js";
+            const fileContent = editor.getValue();
+            const blob = new Blob([fileContent], { type: "text/javascript" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            link.click();
+        }
+
+        // Function to toggle fullscreen mode
+        function toggleFullscreen() {
+            const editorContainer = document.querySelector('.editor-container');
+            const fullscreenButton = document.querySelector('.fullscreen-btn');
+
+            if (editorContainer.classList.contains('fullscreen')) {
+                editorContainer.classList.remove('fullscreen');
+                fullscreenButton.textContent = 'Fullscreen';
+            } else {
+                editorContainer.classList.add('fullscreen');
+                fullscreenButton.textContent = 'Exit Fullscreen';
+            }
+        }
+
+        // Function to run the code
+        function runCode() {
+            const fileName = document.getElementById("file-name").value.trim();
+            const extension = fileName.split('.').pop().toLowerCase();
+            const code = editor.getValue();
+
+            // Handle HTML, CSS, and JS separately
+            if (extension === 'html' || extension === 'htm') {
+                const previewContainer = document.getElementById("preview-container");
+                previewContainer.innerHTML = code;
+            } else if (extension === 'js') {
+                const terminal = document.getElementById("terminal");
+                terminal.style.display = 'block';
+                previewContainer.style.display = 'none';
+
+                try {
+                    const output = eval(code);
+                    terminal.innerHTML = `> ${output}`;
+                } catch (e) {
+                    terminal.innerHTML = `Error: ${e.message}`;
+                }
+            } else {
+                alert("Currently, only HTML and JS are supported for preview and running.");
+            }
         }
     </script>
 </body>
