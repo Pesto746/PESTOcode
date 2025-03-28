@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PESTOcode</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/lint/lint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/lint/javascript-lint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jshint/2.13.4/jshint.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/lint/lint.min.css">
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .editor-container { width: 80%; margin: auto; }
+        .CodeMirror { border: 1px solid #ccc; height: 300px; }
+        .button-container { margin-top: 10px; text-align: center; }
+        .copy-btn { padding: 8px 16px; font-size: 16px; cursor: pointer; background-color: #007BFF; color: white; border: none; border-radius: 5px; }
+        .copy-btn:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="editor-container">
+        <h2>PESTOcode</h2>
+        <textarea id="code"></textarea>
+        <div class="button-container">
+            <button class="copy-btn" onclick="copyCode()">Copy All</button>
+        </div>
+    </div>
+    <script>
+        window.JSHINT = JSHINT;
+        var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+            mode: "javascript",
+            lineNumbers: true,
+            gutters: ["CodeMirror-lint-markers"],
+            lint: true,
+        });
+
+        function copyCode() {
+            navigator.clipboard.writeText(editor.getValue()).then(() => {
+                alert("Code copied to clipboard!");
+            }).catch(err => {
+                console.error("Error copying text: ", err);
+            });
+        }
+    </script>
+</body>
+</html>
